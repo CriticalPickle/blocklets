@@ -1,0 +1,22 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "incubation_chamber",
+  "key": {
+    "G": {
+      "item": "minecraft:glass"
+    },
+    "Q": {
+      "tag": "blocklets:quartz_slabs"
+    }
+  },
+  "pattern": [
+    "QQQ",
+    " G ",
+    "QQQ"
+  ],
+  "result": {
+    "count": 1,
+    "id": "blocklets:incubation_chamber"
+  }
+}

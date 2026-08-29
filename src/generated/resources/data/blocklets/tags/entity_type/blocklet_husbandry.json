@@ -1,0 +1,11 @@
+{
+  "values": [
+    "#blocklets:blocklet_melee_enemies",
+    "minecraft:chicken",
+    "minecraft:cow",
+    "minecraft:iron_golem",
+    "minecraft:mooshroom",
+    "minecraft:rabbit",
+    "minecraft:sheep"
+  ]
+}

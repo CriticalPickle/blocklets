@@ -1,0 +1,12 @@
+{
+  "itemGroup.blocklets": "Blocklets",
+  "block.blocklets.incubation_chamber": "Blocklet Incubation Chamber",
+  "item.blocklets.incubation_chamber": "Blocklet Incubation Chamber",
+  "entity.blocklets.blocklet": "Blocklet",
+
+  "blocklets.configuration.title": "Blocklets Configs",
+  "blocklets.configuration.section.blocklets.common.toml": "Blocklets Configs",
+  "blocklets.configuration.section.blocklets.common.toml.title": "Blocklets Configs",
+  "blocklets.configuration.blockletCanIncubate": "Blocklets Can Incubate",
+  "blocklets.configuration.blockletCanIncubate.tooltip": "Whether to allow Blocklets to be spawned with incubation chamber."
+}
