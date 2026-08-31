@@ -47,13 +47,13 @@ public enum BlockletMaterials {
     }
 
     /**
-     * Determines if item is of a valid material.
-     * @param item the item to compare.
-     * @return If the item is considered valid for given body part.
+     * Determines if items is of a valid material.
+     * @param item the items to compare.
+     * @return If the items is considered valid for given body part.
      */
     public boolean isValidMaterial(Item item) {
         return item instanceof BlockItem blockItem
                 && (blockItem.getBlock().defaultBlockState().is(this.getMaterials())
-                    || (this.equals(BODY) && isFullBlock(blockItem.getBlock())));
+                || (this.equals(BODY) && isFullBlock(blockItem.getBlock())));
     }
 }

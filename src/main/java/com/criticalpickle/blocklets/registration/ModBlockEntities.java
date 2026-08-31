@@ -13,6 +13,7 @@ public class ModBlockEntities {
             BuiltInRegistries.BLOCK_ENTITY_TYPE, Blocklets.MODID);
 
     public static final Supplier<BlockEntityType<IncubationChamberBlockEntity>> INCUBATION_CHAMBER_BE = BLOCK_ENTITIES
-            .register("crate_be", () -> BlockEntityType.Builder.of(
-                    IncubationChamberBlockEntity::new, ModBlocks.INCUBATION_CHAMBER.get()).build(null));
+            .register("crate_be", () -> new BlockEntityType<>(
+                    IncubationChamberBlockEntity::new, ModBlocks.INCUBATION_CHAMBER.get())
+            );
 }

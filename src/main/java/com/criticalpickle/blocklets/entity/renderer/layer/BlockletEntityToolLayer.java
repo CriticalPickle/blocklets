@@ -1,54 +1,39 @@
 package com.criticalpickle.blocklets.entity.renderer.layer;
 
 import com.criticalpickle.blocklets.entity.client.BlockletModel;
-import com.criticalpickle.blocklets.entity.custom.BlockletEntity;
+import com.criticalpickle.blocklets.entity.renderer.state.BlockletRenderState;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.world.item.ItemDisplayContext;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.LightLayer;
+import org.jspecify.annotations.NonNull;
 
-public class BlockletEntityToolLayer<T extends BlockletEntity, M extends BlockletModel<T>> extends RenderLayer<T, M> {
-    public BlockletEntityToolLayer(RenderLayerParent<T, M> parentRenderer) {
+public class BlockletEntityToolLayer extends RenderLayer<BlockletRenderState, BlockletModel> {
+    public BlockletEntityToolLayer(RenderLayerParent<BlockletRenderState, BlockletModel> parentRenderer) {
         super(parentRenderer);
     }
 
     @Override
-    public void render(
-            PoseStack poseStack, MultiBufferSource buffer, int packedLight,
-            T blocklet, float limbSwing, float limbSwingAmount, float partialTick,
-            float ageInTicks, float netHeadYaw, float headPitch
+    public void submit(
+            @NonNull PoseStack poseStack, @NonNull SubmitNodeCollector submitNodeCollector,
+            int i, @NonNull BlockletRenderState state, float v, float v1
     ) {
-        final ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
-        final ItemStack stack = blocklet.getEquippedItem();
-        if (stack.isEmpty()) return;
-
-        final int lightTexture = LightTexture.pack(
-                blocklet.level().getBrightness(LightLayer.BLOCK, blocklet.blockPosition()),
-                blocklet.level().getBrightness(LightLayer.SKY, blocklet.blockPosition())
-        );
-
-        final ModelPart arms =  this.getParentModel().getArms();
-        arms.translateAndRotate(poseStack);
-        arms.getChild("right_arm").translateAndRotate(poseStack);
+        final ItemStackRenderState itemRendererState = state.toolRenderState;
+        if (itemRendererState.isEmpty()) return;
+        final int lightTexture = state.lightTexture;
+        if (lightTexture == -1) return;
 
         poseStack.pushPose();
-        poseStack.translate(0.12f, 0.2f, -0.1f);
-        poseStack.scale(0.4f, 0.4f, 0.4f);
-        poseStack.mulPose(Axis.YP.rotationDegrees(180));
-        poseStack.mulPose(Axis.ZP.rotationDegrees(45));
-        itemRenderer.renderStatic(
-                stack, ItemDisplayContext.FIXED, lightTexture, OverlayTexture.NO_OVERLAY,
-                poseStack, buffer, blocklet.level(), 1
-        );
+        this.getParentModel().getArms().translateAndRotate(poseStack);
+        poseStack.translate(0f, 0.065f, 0f);
+        poseStack.scale(0.75f, 0.75f, 0.75f);
+        poseStack.mulPose(Axis.YP.rotationDegrees(90));
+        poseStack.mulPose(Axis.XP.rotationDegrees(180));
+        itemRendererState.submit(poseStack, submitNodeCollector, lightTexture, OverlayTexture.NO_OVERLAY, 0);
+
         poseStack.popPose();
     }
 }

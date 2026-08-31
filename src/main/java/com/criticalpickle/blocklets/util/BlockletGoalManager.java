@@ -6,13 +6,11 @@ import com.criticalpickle.blocklets.entity.ai.goal.HusbandryGoal;
 import com.criticalpickle.blocklets.entity.ai.goal.MineAccessibleBlocksGoal;
 import com.criticalpickle.blocklets.entity.custom.BlockletEntity;
 import com.criticalpickle.blocklets.registration.ModTags;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
-import net.minecraft.world.item.AxeItem;
-import net.minecraft.world.item.PickaxeItem;
-import net.minecraft.world.item.SwordItem;
 import net.neoforged.neoforge.common.Tags;
 
 import java.util.Arrays;
@@ -46,7 +44,7 @@ public class BlockletGoalManager {
     private void swapAction(Goal goal) {
         blocklet.goalSelector.removeGoal(getActionGoal());
         blocklet.goalSelector.addGoal(2, goal);
-        blocklet.targetSelector.removeAllGoals(setGoal -> true); // Remove all
+        blocklet.targetSelector.removeAllGoals(_ -> true); // Remove all
         setNewGoal = true;
         logAction();
     }
@@ -77,8 +75,8 @@ public class BlockletGoalManager {
     public void setMeleeAttackAction() {
         swapAction(new AttackGoal(blocklet, 1, true));
         blocklet.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(
-                blocklet, Mob.class, true,
-                (target) -> target.getType().is(ModTags.Entities.BLOCKLET_MELEE_ENEMIES) // todo - modded support
+                blocklet, Mob.class, 10, true, false,
+                (target, _) -> target.is(ModTags.Entities.BLOCKLET_MELEE_ENEMIES) // todo - modded support
         ));
     }
 
@@ -90,8 +88,8 @@ public class BlockletGoalManager {
     public void setHusbandryAttackAction() {
         swapAction(new HusbandryGoal(blocklet, 0.8f, true));
         blocklet.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(
-                blocklet, Mob.class, true,
-                (target) -> target.getType().is(ModTags.Entities.BLOCKLET_HUSBANDRY) // todo - modded support
+                blocklet, Mob.class, 10, true, false,
+                (target, _) -> target.is(ModTags.Entities.BLOCKLET_HUSBANDRY) // todo - modded support
         ));
     }
 
@@ -118,7 +116,7 @@ public class BlockletGoalManager {
      * Adds the mining goal depending on status of main hand equipment slot.
      */
     public void updateMiningGoal() {
-        final boolean isPickaxeTool = blocklet.getItemBySlot(EquipmentSlot.MAINHAND).getItem() instanceof PickaxeItem;
+        final boolean isPickaxeTool = blocklet.getItemBySlot(EquipmentSlot.MAINHAND).is(ItemTags.PICKAXES);
         final Goal actionGoal = getActionGoal();
 
         if (isPickaxeTool && !(actionGoal instanceof MineAccessibleBlocksGoal)) {
@@ -130,7 +128,7 @@ public class BlockletGoalManager {
      * Adds the melee attack goal depending on status of main hand equipment slot.
      */
     public void updateMeleeAttackGoal() {
-        final boolean isAxe = blocklet.getItemBySlot(EquipmentSlot.MAINHAND).getItem() instanceof AxeItem;
+        final boolean isAxe = blocklet.getItemBySlot(EquipmentSlot.MAINHAND).is(ItemTags.AXES);
         final Goal actionGoal = getActionGoal();
 
         if (isAxe && !(actionGoal instanceof AttackGoal)) {
@@ -142,7 +140,7 @@ public class BlockletGoalManager {
      * Adds the husbandry goal depending on status of main hand equipment slot.
      */
     public void updateHusbandryGoal() {
-        final boolean isSword = blocklet.getItemBySlot(EquipmentSlot.MAINHAND).getItem() instanceof SwordItem;
+        final boolean isSword = blocklet.getItemBySlot(EquipmentSlot.MAINHAND).is(ItemTags.SWORDS);
         final Goal actionGoal = getActionGoal();
 
         if (isSword && !(actionGoal instanceof HusbandryGoal)) {

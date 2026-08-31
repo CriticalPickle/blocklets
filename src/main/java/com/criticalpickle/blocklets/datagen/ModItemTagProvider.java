@@ -3,28 +3,29 @@ package com.criticalpickle.blocklets.datagen;
 import com.criticalpickle.blocklets.Blocklets;
 import com.criticalpickle.blocklets.registration.ModTags;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.data.PackOutput;
-import net.minecraft.data.tags.ItemTagsProvider;
+import net.minecraft.data.tags.TagsProvider;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.block.Block;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
 
-public class ModItemTagProvider extends ItemTagsProvider {
+public class ModItemTagProvider extends TagsProvider<Item> {
     public ModItemTagProvider(
-            PackOutput output, CompletableFuture<HolderLookup.Provider> lookupProvider,
-            CompletableFuture<TagLookup<Block>> blockTags, @Nullable ExistingFileHelper existingFileHelper
+            PackOutput output, CompletableFuture<HolderLookup.Provider> registries
     ) {
-        super(output, lookupProvider, blockTags, Blocklets.MODID, existingFileHelper);
+        super(output, Registries.ITEM, registries, Blocklets.MODID);
     }
 
     @Override
     protected void addTags(HolderLookup.@NotNull Provider provider) {
-        tag(ModTags.Items.QUARTZ_SLABS).add(
-                Items.QUARTZ_SLAB, Items.SMOOTH_QUARTZ_SLAB
-        ).replace(false);
+        this.getOrCreateRawBuilder(ModTags.Items.QUARTZ_SLABS)
+                .addElement(BuiltInRegistries.ITEM.getKey(Items.QUARTZ_SLAB))
+                .addElement(BuiltInRegistries.ITEM.getKey(Items.SMOOTH_QUARTZ_SLAB))
+                .replace(false);
     }
 }

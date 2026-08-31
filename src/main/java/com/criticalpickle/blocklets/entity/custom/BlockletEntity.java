@@ -5,11 +5,13 @@ import com.criticalpickle.blocklets.entity.ai.goal.EntityFollowOwnerGoal;
 import com.criticalpickle.blocklets.util.BlockletAction;
 import com.criticalpickle.blocklets.util.BlockletGoalManager;
 import com.criticalpickle.blocklets.util.BlockletMaterials;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.NonNullList;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.*;
@@ -23,10 +25,14 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.items.ItemStackHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -40,13 +46,13 @@ public class BlockletEntity extends PathfinderMob implements OwnableEntity {
     // Note that inventory stack handler size can be changed later but must
     // override deserializeNBT. Inventory is only currently for the server to
     // bookkeep blocklet items as client doesn't receive reliable updates.
-    private final ItemStackHandler inventory = new ItemStackHandler(2);
+    private final ItemStacksResourceHandler inventory = new ItemStacksResourceHandler(2);
     private final BlockletGoalManager goalManager;
     public static final double BASE_ARMOR = 0.0;
     public static final double BASE_ARMOR_TOUGHNESS = 0.0;
 
-    private static final EntityDataAccessor<Optional<UUID>> OWNER_UUID =
-            SynchedEntityData.defineId(BlockletEntity.class, EntityDataSerializers.OPTIONAL_UUID);
+    private static final EntityDataAccessor<Optional<EntityReference<LivingEntity>>> OWNER_ENTITY =
+            SynchedEntityData.defineId(BlockletEntity.class, EntityDataSerializers.OPTIONAL_LIVING_ENTITY_REFERENCE);
     private static final EntityDataAccessor<ItemStack> BLOCKLET_BLOCK =
             SynchedEntityData.defineId(BlockletEntity.class, EntityDataSerializers.ITEM_STACK);
     private static final EntityDataAccessor<String> START_ACTION =
@@ -64,7 +70,7 @@ public class BlockletEntity extends PathfinderMob implements OwnableEntity {
     @Override
     protected void defineSynchedData(SynchedEntityData.@NotNull Builder builder) {
         super.defineSynchedData(builder);
-        builder.define(OWNER_UUID, Optional.empty());
+        builder.define(OWNER_ENTITY, Optional.empty());
         builder.define(BLOCKLET_BLOCK, ItemStack.EMPTY);
         builder.define(START_ACTION, "");
         builder.define(MINING, false);
@@ -165,7 +171,7 @@ public class BlockletEntity extends PathfinderMob implements OwnableEntity {
     @Override
     public void setItemSlot(@NotNull EquipmentSlot slot, @NotNull ItemStack stack) {
         super.setItemSlot(slot, stack);
-        if (slot == EquipmentSlot.MAINHAND && !level().isClientSide) {
+        if (slot == EquipmentSlot.MAINHAND && !level().isClientSide()) {
             goalManager.setNewGoal = false;
             goalManager.updateMiningGoal();
             goalManager.updateMeleeAttackGoal();
@@ -182,17 +188,17 @@ public class BlockletEntity extends PathfinderMob implements OwnableEntity {
             final ItemStack interactionStack = player.getItemInHand(hand);
 
             // Required skip as sometimes air as the
-            // interaction stack item leaks into this function.
-            if (interactionStack.isEmpty()) return super.mobInteract(player, hand); // todo - unequip item
+            // interaction stack items leaks into this function.
+            if (interactionStack.isEmpty()) return super.mobInteract(player, hand); // todo - unequip items
 
             // Run the world/data mutation logic strictly on the Server
             if (!level().isClientSide()) {
                 final ItemStack toStore = new ItemStack(interactionStack.getItem());
                 boolean isSet = false;
 
-                // Check if item is stackable (i.e. a possible tool)
-                // or if it is a block to display. This item will be
-                // swapped with the returned existing item, if applicable.
+                // Check if items is stackable (i.e. a possible tool)
+                // or if it is a block to display. This items will be
+                // swapped with the returned existing items, if applicable.
                 if (!toStore.isStackable()) {
                     if (!getEquippedItem().isEmpty()) {
                         level().addFreshEntity(new ItemEntity(
@@ -218,19 +224,23 @@ public class BlockletEntity extends PathfinderMob implements OwnableEntity {
             }
 
             // Return success on both client and server to keep them in sync
-            return InteractionResult.sidedSuccess(level().isClientSide());
+            return InteractionResult.SUCCESS;
         }
 
         return super.mobInteract(player, hand);
     }
 
-    public void setOwnerUUID(@Nullable UUID uuid) {
-        this.entityData.set(OWNER_UUID, Optional.ofNullable(uuid));
+    public void setOwnerReference(@Nullable EntityReference<LivingEntity> entityReference) {
+        this.entityData.set(OWNER_ENTITY, Optional.ofNullable(entityReference));
+    }
+
+    public @Nullable UUID getOwnerUUID() {
+        return this.getOwnerReference() != null ? this.getOwnerReference().getUUID() : null;
     }
 
     @Override
-    public @Nullable UUID getOwnerUUID() {
-        return this.entityData.get(OWNER_UUID).orElse(null);
+    public @Nullable EntityReference<LivingEntity> getOwnerReference() {
+        return this.entityData.get(OWNER_ENTITY).orElse(null);
     }
 
     @Override
@@ -267,13 +277,22 @@ public class BlockletEntity extends PathfinderMob implements OwnableEntity {
         return goalManager;
     }
 
-    public ItemStackHandler getInventory() {
+    public ItemStacksResourceHandler getInventory() {
         return inventory;
+    }
+
+    public void copyInventory(ItemStacksResourceHandler oldInventory) {
+        if(oldInventory != null) {
+            int minSize = Math.min(getInventory().size(), oldInventory.size());
+            for(int i = 0; i < minSize; i++) {
+                getInventory().set(i, oldInventory.getResource(i), oldInventory.getAmountAsInt(i));
+            }
+        }
     }
 
     public void setBlockStack(ItemStack stack) {
         this.entityData.set(BLOCKLET_BLOCK, stack);
-        this.inventory.setStackInSlot(0, stack);
+        this.inventory.set(0, ItemResource.of(stack), stack.count());
         updateBlockletAttributes();
     }
 
@@ -300,13 +319,13 @@ public class BlockletEntity extends PathfinderMob implements OwnableEntity {
         if (!this.level().isClientSide() && (reason == RemovalReason.KILLED || reason == RemovalReason.DISCARDED)) {
             Blocklets.LOGGER.info("Unnamed {} died: {}", this, this.getCombatTracker().getDeathMessage().getString());
 
-            for (int i = 0; i < this.getInventory().getSlots(); i++) {
-                final ItemStack stack = this.getInventory().getStackInSlot(i);
+            for (int i = 0; i < this.getInventory().size(); i++) {
+                final ItemStack stack = this.getInventory().getResource(i).toStack();
                 if (!stack.isEmpty()) {
                     level().addFreshEntity(new ItemEntity(
                             level(), this.getX(), this.getY(), this.getZ(), stack.copy()
                     ));
-                    this.getInventory().setStackInSlot(i, ItemStack.EMPTY);
+                    this.getInventory().set(i, ItemResource.EMPTY, 0);
                 }
             }
 
@@ -321,28 +340,41 @@ public class BlockletEntity extends PathfinderMob implements OwnableEntity {
     }
 
     @Override
-    public void addAdditionalSaveData(@NotNull CompoundTag tag) {
-        super.addAdditionalSaveData(tag);
+    protected void addAdditionalSaveData(@NonNull ValueOutput output) {
+        super.addAdditionalSaveData(output);
         final UUID owner = getOwnerUUID();
         if (owner != null) {
-            tag.putUUID("Owner", owner);
+            output.storeNullable("Owner", UUIDUtil.CODEC, owner);
         }
-        tag.put("inventory", this.getInventory().serializeNBT(this.registryAccess()));
+        this.getInventory().serialize(output);
         // Action must be saved as it is purged from Blocklet on world close.
-        tag.putString("blockletAction", this.goalManager.getActionGoal().getClass().getSimpleName());
+        output.putString("blockletAction", this.goalManager.getActionGoal().getClass().getSimpleName());
     }
 
     @Override
-    public void readAdditionalSaveData(@NotNull CompoundTag tag) {
-        super.readAdditionalSaveData(tag);
-        if (tag.contains("Owner")) {
-            setOwnerUUID(tag.getUUID("Owner"));
+    protected void readAdditionalSaveData(@NonNull ValueInput input) {
+        super.readAdditionalSaveData(input);
+        if (input.child("Owner").isPresent()) {
+            final UUID uuid = input.read("Owner", UUIDUtil.CODEC).orElse(null);
+            if (uuid != null) {
+                setOwnerReference(EntityReference.of(uuid));
+            } else {
+                setOwnerReference(null);
+            }
         }
-        this.getInventory().deserializeNBT(this.registryAccess(), tag.getCompound("inventory"));
-        this.entityData.set(BLOCKLET_BLOCK, this.getInventory().getStackInSlot(0).copy());
-        final BlockletAction action = BlockletAction.find(tag.getString("blockletAction"));
-        if (action != null) {
-            action.setAction(this);
+        this.getInventory().deserialize(input);
+        if (input.child("inventory").isPresent()) {
+            final NonNullList<ItemStack> stacks = NonNullList.withSize(4, ItemStack.EMPTY);
+            ContainerHelper.loadAllItems(input.child("inventory").get(), stacks);
+            final ItemStacksResourceHandler temp = new ItemStacksResourceHandler(stacks);
+            copyInventory(temp);
         }
+
+        this.entityData.set(BLOCKLET_BLOCK, this.getInventory().getResource(0).toStack().copy());
+        final String actionString = input.getString("blockletAction").orElse(null);
+        if (actionString == null) return;
+        final BlockletAction action = BlockletAction.find(actionString);
+        if (action == null) return;
+        action.setAction(this);
     }
 }

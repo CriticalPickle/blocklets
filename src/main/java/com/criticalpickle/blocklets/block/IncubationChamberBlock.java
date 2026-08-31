@@ -1,5 +1,6 @@
 package com.criticalpickle.blocklets.block;
 
+import com.criticalpickle.blocklets.Blocklets;
 import com.criticalpickle.blocklets.Config;
 import com.criticalpickle.blocklets.block.entity.IncubationChamberBlockEntity;
 import com.criticalpickle.blocklets.entity.custom.BlockletEntity;
@@ -10,15 +11,19 @@ import com.criticalpickle.blocklets.util.IncubationTubeColor;
 import com.mojang.serialization.MapCodec;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.EntityReference;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -46,9 +51,11 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.neoforged.neoforge.common.Tags;
-import net.neoforged.neoforge.items.ItemStackHandler;
+import net.neoforged.neoforge.transfer.item.ItemResource;
+import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -110,9 +117,8 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
 
     @Override
     public boolean canPlaceLiquid(
-            @Nullable Player player, @NotNull BlockGetter level, @NotNull BlockPos pos,
-            BlockState state, @NotNull Fluid fluid
-    ) {
+            @Nullable LivingEntity livingEntity, @NonNull BlockGetter blockGetter, @NonNull BlockPos pos,
+            @NonNull BlockState state, @NonNull Fluid fluid) {
         return !state.getValue(FILLED) && fluid == Fluids.WATER;
     }
 
@@ -129,9 +135,9 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
     }
 
     @Override
-    public @NotNull ItemStack pickupBlock(
-            @Nullable Player player, @NotNull LevelAccessor level,
-            @NotNull BlockPos pos, BlockState state
+    public @NonNull ItemStack pickupBlock(
+            @Nullable LivingEntity livingEntity, @NonNull LevelAccessor level,
+            @NonNull BlockPos pos, @NonNull BlockState state
     ) {
         if (!state.getValue(FILLED)) return ItemStack.EMPTY;
 
@@ -145,20 +151,7 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
     }
 
     @Override
-    protected void onRemove(
-            @NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
-            @NotNull BlockState newState,boolean movedByPiston
-    ) {
-        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof
-                IncubationChamberBlockEntity blockEntity) {
-            blockEntity.drop();
-            level.updateNeighbourForOutputSignal(pos, this);
-        }
-        super.onRemove(state, level, pos, newState, movedByPiston);
-    }
-
-    @Override
-    protected @NotNull ItemInteractionResult useItemOn(
+    protected @NotNull InteractionResult useItemOn(
             @NotNull ItemStack stack, @NotNull BlockState state, Level level, @NotNull BlockPos pos,
             @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hitResult
     ) {
@@ -175,27 +168,29 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
                     level.playSound(
                             null, pos, SoundEvents.GLOW_INK_SAC_USE, SoundSource.BLOCKS, 1f, 1f
                     );
-                    return ItemInteractionResult.SUCCESS;
+                    return InteractionResult.SUCCESS;
                 }
             }
 
             if (player.isShiftKeyDown()) {
                 entity.drop();
                 level.setBlock(pos, state.setValue(GROWTH_STAGE, 0), Block.UPDATE_ALL);
+                level.removeBlockEntity(pos);
+                level.sendBlockUpdated(pos, state, level.getBlockState(pos), Block.UPDATE_ALL);
                 level.playSound(
                         null, pos, SoundEvents.WITHER_SHOOT, SoundSource.BLOCKS, 0.25f, 1.25f
                 );
-                return ItemInteractionResult.SUCCESS;
+                return InteractionResult.SUCCESS;
             }
 
-            if (stack.isEmpty()) return ItemInteractionResult.FAIL;
-            if (!state.getValue(FILLED)) return ItemInteractionResult.FAIL;
+            if (stack.isEmpty()) return InteractionResult.FAIL;
+            if (!state.getValue(FILLED)) return InteractionResult.FAIL;
 
-            final ItemStackHandler entityInventory = entity.getInventory();
+            final ItemStacksResourceHandler entityInventory = entity.getInventory();
             for (BlockletMaterials bodyPart : BlockletMaterials.values()) {
-                // Get item
+                // Get items
                 final int partIndex = bodyPart.getInventoryIndex();
-                final boolean slotEmpty = entityInventory.getStackInSlot(partIndex).isEmpty();
+                final boolean slotEmpty = entityInventory.getResource(partIndex).isEmpty();
                 if (!slotEmpty) continue;
 
                 // If concrete powder, turn into concrete
@@ -203,23 +198,26 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
                 final Item item;
                 if (itemID.contains("_powder")) {
                     itemID = itemID.replace("_powder", "");
-                    final ResourceLocation concreteLocation = ResourceLocation.withDefaultNamespace(itemID);
-                    item = BuiltInRegistries.ITEM.get(concreteLocation);
+                    final Identifier concreteLocation = Identifier.withDefaultNamespace(itemID);
+                    item = BuiltInRegistries.ITEM.get(concreteLocation).map(Holder::value).orElse(null);
                 }
                 else {
                     item = stack.getItem();
                 }
 
-                // Determine validity of item
-                final int limit = entityInventory.getSlotLimit(partIndex);
+                if (item == null) return InteractionResult.FAIL;
+
+                // Determine validity of items
+                final int limit = entityInventory.getCapacityAsInt(partIndex, ItemResource.of(item));
                 if (bodyPart.isValidMaterial(item)) {
-                    entityInventory.setStackInSlot(partIndex, new ItemStack(item, limit));
+                    entityInventory.set(partIndex, ItemResource.of(item), limit);
                     if (!player.isCreative()) stack.shrink(limit);
+                    level.sendBlockUpdated(pos, state, level.getBlockState(pos), Block.UPDATE_ALL);
                     level.playSound(
                             null, pos, SoundEvents.BREWING_STAND_BREW, SoundSource.BLOCKS, 1f, 1f
                     );
                     this.blockletOwnerID = player.getUUID();
-                    return ItemInteractionResult.SUCCESS;
+                    return InteractionResult.SUCCESS;
                 }
             }
         }
@@ -261,14 +259,16 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
             if (spawnPos == null) return;
 
             // Get blocklet entity instance
-            final BlockletEntity blocklet = ModEntityTypes.BLOCKLET_ENTITY.get().create(level);
+            final BlockletEntity blocklet = ModEntityTypes.BLOCKLET_ENTITY.get().create(
+                    level, EntitySpawnReason.TRIGGERED
+            );
             if (blocklet != null && this.blockletOwnerID != null) {
                 // Spawn blocklet
-                blocklet.setOwnerUUID(this.blockletOwnerID);
-                blocklet.setBlockStack(entity.getInventory().getStackInSlot(
-                        BlockletMaterials.BODY.getInventoryIndex()).copy()
-                );
-                blocklet.moveTo(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5);
+                blocklet.setOwnerReference(EntityReference.of(blocklet));
+                blocklet.setBlockStack(entity.getInventory().getResource(
+                        BlockletMaterials.BODY.getInventoryIndex()
+                ).toStack().copy());
+                blocklet.setPos(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5);
                 level.addFreshEntity(blocklet);
 
                 // Trigger user feedback
@@ -321,7 +321,7 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
     ) {
         return level.isClientSide() ? null : createTickerHelper(
                 blockEntityType, ModBlockEntities.INCUBATION_CHAMBER_BE.get(),
-                (lvl, pos, blockState, entity)
+                (lvl, pos, _, _)
                     -> tick(lvl, pos, state)
         );
     }

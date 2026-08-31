@@ -2,6 +2,7 @@ package com.criticalpickle.blocklets.entity.ai.goal;
 
 import com.criticalpickle.blocklets.entity.custom.BlockletEntity;
 import com.criticalpickle.blocklets.util.BlockletAction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
@@ -34,7 +35,8 @@ public class HusbandryGoal extends MeleeAttackGoal {
                     blocklet.setStartAction("");
                 }
             }
-            this.mob.doHurtTarget(target);
+            if (target.level().isClientSide()) return;
+            this.mob.doHurtTarget((ServerLevel) target.level(), target);
         }
     }
 

@@ -30,7 +30,7 @@ public class ExcludeVisibleClipContext extends ClipContext {
             final VoxelShape shape = state.getCollisionShape(level, pos);
             return shape.isEmpty() ? Shapes.empty() : shape;
         }
-        if (!state.isSolidRender(level, pos)) return Shapes.empty();
+        if (!state.isSolidRender()) return Shapes.empty();
         return super.getBlockShape(state, level, pos);
     }
 }

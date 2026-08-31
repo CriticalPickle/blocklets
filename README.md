@@ -7,7 +7,8 @@ provide them with special attributes or provide a more personalized style. In ad
 for them to work on a specific task. Blocklets are reliable and heavily customizable to meet the varying needs of the player
 and their existing world.
 
-This mod is currently only developed and maintained for Minecraft [NeoForge](https://neoforged.net/) in version 1.21.1 (this github branch).
+This mod is currently only developed and maintained for Minecraft [NeoForge](https://neoforged.net/) in version [1.21.1](https://github.com/CriticalPickle/blocklets/tree/main) 
+and 26.1.x (this github branch).
 
 Please view the [wiki](https://github.com/CriticalPickle/blocklets/wiki) for more details on features and other useful 
 information, such as how to modify various mod aspects through tags.

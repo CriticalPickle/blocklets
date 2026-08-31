@@ -6,12 +6,17 @@ import com.criticalpickle.blocklets.registration.ModBlocks;
 import com.criticalpickle.blocklets.registration.ModEntityTypes;
 import com.criticalpickle.blocklets.registration.ModRegistration;
 import com.criticalpickle.blocklets.util.MiningClaimManager;
+import net.minecraft.client.color.block.BlockTintSource;
 import net.minecraft.client.renderer.BiomeColors;
+import net.minecraft.client.renderer.block.BlockAndTintGetter;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -24,6 +29,8 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
+
+import java.util.List;
 
 // Coded by CriticalPickle
 
@@ -66,10 +73,33 @@ public class Blocklets {
         }
     }
 
-    public void registerBlockColors(RegisterColorHandlersEvent.Block event) {
+    public void registerBlockColors(RegisterColorHandlersEvent.BlockTintSources event) {
         event.register(
-                (state, level, pos, tintIndex)
-                        -> level != null && pos != null ? BiomeColors.getAverageWaterColor(level, pos) : -1,
+                List.of(
+                        new BlockTintSource() {
+                            @Override
+                            public int color(@NonNull BlockState state) {
+                                return 0xFF3F76E4;
+                            }
+
+                            @Override
+                            public int colorInWorld(
+                                    @NonNull BlockState state, @NonNull BlockAndTintGetter level,
+                                    @NonNull BlockPos pos
+                            ) {
+                                return BiomeColors.getAverageWaterColor(level, pos);
+                            }
+
+                            @Override
+                            public int colorAsTerrainParticle(
+                                    @NonNull BlockState state, @NonNull BlockAndTintGetter level,
+                                    @NonNull BlockPos pos
+                            ) {
+                                // The tint applied to broken blocks or falling dust particles
+                                return colorInWorld(state, level, pos);
+                            }
+                        }
+                ),
                 ModBlocks.INCUBATION_CHAMBER.get()
         );
     }

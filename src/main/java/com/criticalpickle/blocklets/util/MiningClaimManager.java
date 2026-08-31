@@ -27,7 +27,7 @@ public class MiningClaimManager {
     public static boolean isClaimed(Level level, BlockPos pos) {
         final ResourceKey<Level> dimension = level.dimension();
         final Map<BlockPos, Claim> dimensionClaims = BLOCK_CLAIMS.computeIfAbsent(
-                dimension, k -> new HashMap<>());
+                dimension, _ -> new HashMap<>());
         final long currentTick = level.getGameTime();
         return dimensionClaims.containsKey(pos) && currentTick <= dimensionClaims.get(pos).expirationTick();
     }
@@ -43,7 +43,7 @@ public class MiningClaimManager {
         final Level level = possibleOwner.level();
         final ResourceKey<Level> dimension = level.dimension();
         final Map<BlockPos, Claim> dimensionClaims = BLOCK_CLAIMS.computeIfAbsent(
-                dimension, k -> new HashMap<>());
+                dimension, _ -> new HashMap<>());
         final long currentTick = level.getGameTime();
 
         if (isClaimed(level, pos)) return false;
@@ -61,7 +61,7 @@ public class MiningClaimManager {
     public static boolean tryRelease(BlockPos pos, Mob possibleOwner) {
         final ResourceKey<Level> dimension = possibleOwner.level().dimension();
         final Map<BlockPos, Claim> dimensionClaims = BLOCK_CLAIMS.computeIfAbsent(
-                dimension, k -> new HashMap<>()
+                dimension, _ -> new HashMap<>()
         );
         final Claim claim = dimensionClaims.getOrDefault(pos, null);
         if (claim != null && claim.mobID().equals(possibleOwner.getUUID())) {
@@ -79,7 +79,7 @@ public class MiningClaimManager {
         if (event.getLevel() instanceof ServerLevel level) {
             final ResourceKey<Level> dimension = level.dimension();
             final Map<BlockPos, Claim> dimensionClaims = BLOCK_CLAIMS.computeIfAbsent(
-                    dimension, k -> new HashMap<>()
+                    dimension, _ -> new HashMap<>()
             );
             dimensionClaims.remove(event.getPos());
         }

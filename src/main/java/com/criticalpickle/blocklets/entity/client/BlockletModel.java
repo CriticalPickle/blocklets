@@ -5,32 +5,35 @@ package com.criticalpickle.blocklets.entity.client;
 
 import com.criticalpickle.blocklets.Blocklets;
 import com.criticalpickle.blocklets.entity.custom.BlockletEntity;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.model.HierarchicalModel;
+import com.criticalpickle.blocklets.entity.renderer.state.BlockletRenderState;
+import net.minecraft.client.animation.KeyframeAnimation;
+import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
-import net.minecraft.resources.ResourceLocation;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.resources.Identifier;
+import org.jspecify.annotations.NonNull;
 
-public class BlockletModel<T extends BlockletEntity> extends HierarchicalModel<T> {
+public class BlockletModel extends EntityModel<BlockletRenderState> {
 	// This layer location should be baked with EntityRendererProvider.Context in
 	// the entity renderer and passed into this model's constructor
 	public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(
-			ResourceLocation.fromNamespaceAndPath(Blocklets.MODID, "blocklet"), "main"
+			Identifier.fromNamespaceAndPath(Blocklets.MODID, "blocklet"), "main"
 	);
-	private final ModelPart root;
-	private final ModelPart eyes;
 	private final ModelPart arms;
-	private final ModelPart legs;
+	private final KeyframeAnimation bakedWalk;
+	private final KeyframeAnimation bakedStartAction;
+	private final KeyframeAnimation bakedMineAction;
+	private final KeyframeAnimation bakedSwingAction;
 
 	public BlockletModel(ModelPart root) {
-		this.root = root;
-		this.eyes = root.getChild("eyes");
+        super(root);
 		this.arms = root.getChild("arms");
-		this.legs = root.getChild("legs");
+		this.bakedWalk = BlockletModelAnimations.WALK.bake(root);
+		this.bakedStartAction = BlockletModelAnimations.START_ACTION.bake(root);
+		this.bakedMineAction = BlockletModelAnimations.MINE.bake(root);
+		this.bakedSwingAction = BlockletModelAnimations.SWING.bake(root);
 	}
 
 	public static LayerDefinition createBodyLayer() {
@@ -92,30 +95,13 @@ public class BlockletModel<T extends BlockletEntity> extends HierarchicalModel<T
 	}
 
 	@Override
-	public void setupAnim(
-			@NotNull BlockletEntity blocklet, float limbSwing, float limbSwingAmount,
-			float ageInTicks, float netHeadYaw, float headPitch
-	) {
+	public void setupAnim(@NonNull BlockletRenderState state) {
+		super.setupAnim(state);
 		this.root().getAllParts().forEach(ModelPart::resetPose);
-		this.animate(blocklet.walkAnimationState, BlockletModelAnimations.WALK, ageInTicks);
-		this.animate(blocklet.startActionAnimationState, BlockletModelAnimations.START_ACTION, ageInTicks);
-		this.animate(blocklet.mineAnimationState, BlockletModelAnimations.MINE, ageInTicks);
-		this.animate(blocklet.swingAnimationState, BlockletModelAnimations.SWING, ageInTicks);
-	}
-
-	@Override
-	public void renderToBuffer(
-			@NotNull PoseStack poseStack, @NotNull VertexConsumer vertexConsumer,
-			int packedLight, int packedOverlay, int color
-	) {
-		eyes.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-		arms.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-		legs.render(poseStack, vertexConsumer, packedLight, packedOverlay, color);
-	}
-
-	@Override
-	public @NotNull ModelPart root() {
-		return this.root;
+		this.bakedWalk.apply(state.walkAnimationState, state.ageInTicks);
+		this.bakedStartAction.apply(state.startActionAnimationState, state.ageInTicks);
+		this.bakedMineAction.apply(state.mineAnimationState, state.ageInTicks);
+		this.bakedSwingAction.apply(state.swingAnimationState, state.ageInTicks);
 	}
 
 	public ModelPart getArms() {

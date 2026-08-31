@@ -30,8 +30,8 @@ public enum IncubationTubeColor implements StringRepresentable {
     }
 
     /**
-     * Gets a color based on a dye item.
-     * @param dye the dye item to compare.
+     * Gets a color based on a dye items.
+     * @param dye the dye items to compare.
      * @return The relating IncubationTubeColor enum or null if none exist.
      */
     public static IncubationTubeColor getColor(Item dye) {

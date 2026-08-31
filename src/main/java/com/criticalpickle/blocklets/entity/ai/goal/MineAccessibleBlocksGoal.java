@@ -274,7 +274,7 @@ public class MineAccessibleBlocksGoal extends Goal {
                 serverLevel.destroyBlock(this.targetBlockPos, true, this.minerMob);
                 if (!particleStack.isEmpty()) {
                     serverLevel.sendParticles(
-                            new ItemParticleOption(ParticleTypes.ITEM, particleStack),
+                            new ItemParticleOption(ParticleTypes.ITEM, particleStack.getItem()),
                             targetBlockPos.getX() + 0.5,
                             targetBlockPos.getY() + 0.5,
                             targetBlockPos.getZ() + 0.5,

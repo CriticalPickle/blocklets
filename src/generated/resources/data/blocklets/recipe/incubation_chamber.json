@@ -3,12 +3,8 @@
   "category": "misc",
   "group": "incubation_chamber",
   "key": {
-    "G": {
-      "item": "minecraft:glass"
-    },
-    "Q": {
-      "tag": "blocklets:quartz_slabs"
-    }
+    "G": "minecraft:glass",
+    "Q": "#blocklets:quartz_slabs"
   },
   "pattern": [
     "QQQ",
@@ -16,7 +12,6 @@
     "QQQ"
   ],
   "result": {
-    "count": 1,
     "id": "blocklets:incubation_chamber"
   }
 }

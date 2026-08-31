@@ -62,7 +62,7 @@ public class EntityFollowOwnerGoal<T extends PathfinderMob & OwnableEntity> exte
         if (!this.canTeleportTo(new BlockPos(x, y, z))) {
             return false;
         } else {
-            this.followerMob.moveTo((double)x + (double)0.5f, y, (double)z + (double)0.5f,
+            this.followerMob.snapTo((double)x + (double)0.5f, y, (double)z + (double)0.5f,
                     this.followerMob.getYRot(), this.followerMob.getXRot());
             this.followerMob.getNavigation().stop();
             return true;

@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "blocklets:block/incubation_chamber"
+  }
+}

@@ -7,7 +7,6 @@ import net.minecraft.data.PackOutput;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.common.data.BlockTagsProvider;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import net.neoforged.neoforge.data.event.GatherDataEvent;
 
 import java.util.concurrent.CompletableFuture;
@@ -15,23 +14,16 @@ import java.util.concurrent.CompletableFuture;
 @EventBusSubscriber(modid = Blocklets.MODID)
 public class DataGenerators {
     @SubscribeEvent
-    public static void gatherData(GatherDataEvent event) {
+    public static void gatherData(GatherDataEvent.Client event) {
         final DataGenerator generator = event.getGenerator();
         final PackOutput packOutput = generator.getPackOutput();
-        final ExistingFileHelper existingFileHelper = event.getExistingFileHelper();
         final CompletableFuture<HolderLookup.Provider> lookupProvider = event.getLookupProvider();
 
-        final BlockTagsProvider blockTagsProvider = new ModBlockTagProvider(
-                packOutput, lookupProvider, existingFileHelper
-        );
-        generator.addProvider(event.includeServer(), blockTagsProvider);
-        generator.addProvider(event.includeServer(), new ModItemTagProvider(
-                packOutput, lookupProvider, blockTagsProvider.contentsGetter(), existingFileHelper
-        ));
-        generator.addProvider(event.includeServer(), new ModEntityTypeTagProvider(
-                packOutput, lookupProvider, existingFileHelper
-        ));
+        final BlockTagsProvider blockTagsProvider = new ModBlockTagProvider(packOutput, lookupProvider);
+        generator.addProvider(true, blockTagsProvider);
+        generator.addProvider(true, new ModItemTagProvider(packOutput, lookupProvider));
+        generator.addProvider(true, new ModEntityTypeTagProvider(packOutput, lookupProvider));
 
-        generator.addProvider(event.includeServer(), new ModRecipeProvider(packOutput, lookupProvider));
+        generator.addProvider(true, new ModRecipeProvider.Runner(packOutput, lookupProvider));
     }
 }

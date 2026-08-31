@@ -6,18 +6,15 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.EntityTypeTagsProvider;
 import net.minecraft.world.entity.EntityType;
-import net.neoforged.neoforge.common.data.ExistingFileHelper;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
 
 public class ModEntityTypeTagProvider extends EntityTypeTagsProvider {
     public ModEntityTypeTagProvider(
-            PackOutput output, CompletableFuture<HolderLookup.Provider> provider,
-            @Nullable ExistingFileHelper existingFileHelper
+            PackOutput output, CompletableFuture<HolderLookup.Provider> provider
     ) {
-        super(output, provider, Blocklets.MODID, existingFileHelper);
+        super(output, provider, Blocklets.MODID);
     }
 
     @Override
