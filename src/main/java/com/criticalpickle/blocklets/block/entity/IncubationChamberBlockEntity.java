@@ -53,6 +53,16 @@ public class IncubationChamberBlockEntity extends BlockEntity {
         return inventory;
     }
 
+    public boolean inventoryIsEmpty() {
+        if (getInventory().getSlots() <= 0) return true;
+        for (int i = 0; i < getInventory().getSlots(); i++) {
+            if (!getInventory().getStackInSlot(i).isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public void clearInventory() {
         for (int i = 0; i < inventory.getSlots(); i++) {
             inventory.setStackInSlot(i, ItemStack.EMPTY);
@@ -78,6 +88,7 @@ public class IncubationChamberBlockEntity extends BlockEntity {
 
         if(this.level != null) {
             Containers.dropContents(this.level, this.worldPosition, containerInv);
+            clearInventory();
         }
     }
 
