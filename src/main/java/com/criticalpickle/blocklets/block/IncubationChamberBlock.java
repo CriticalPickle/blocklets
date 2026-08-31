@@ -1,6 +1,5 @@
 package com.criticalpickle.blocklets.block;
 
-import com.criticalpickle.blocklets.Blocklets;
 import com.criticalpickle.blocklets.Config;
 import com.criticalpickle.blocklets.block.entity.IncubationChamberBlockEntity;
 import com.criticalpickle.blocklets.entity.custom.BlockletEntity;
@@ -66,7 +65,7 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
     public static final int MAX_GROWTH_STAGE = 10;
     public static final IntegerProperty GROWTH_STAGE = IntegerProperty.create("growth_stage", 0, MAX_GROWTH_STAGE);
     public static final EnumProperty<IncubationTubeColor> TUBE_COLOR = EnumProperty.create("tube_color", IncubationTubeColor.class);
-    public static final int GROWTH_INTERVAL = 900; // One stage every 45 seconds
+    public static final int GROWTH_INTERVAL = 20; // One stage every 45 seconds
     private UUID blockletOwnerID = null;
 
     private static final VoxelShape BASE = Block.box(0, 0, 0, 16, 3, 16); // Base
@@ -155,7 +154,7 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
             @NotNull ItemStack stack, @NotNull BlockState state, Level level, @NotNull BlockPos pos,
             @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hitResult
     ) {
-        if (level.getBlockEntity(pos) instanceof IncubationChamberBlockEntity entity) {
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof IncubationChamberBlockEntity entity) {
             if (stack.is(Tags.Items.BUCKETS_WATER) || stack.is(Tags.Items.BUCKETS_EMPTY)) {
                 return super.useItemOn(stack, state, level, pos, player, hand, hitResult);
             }
@@ -163,7 +162,7 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
             if (stack.is(Tags.Items.DYES)) {
                 final IncubationTubeColor color = IncubationTubeColor.getColor(stack.getItem());
                 if (color != null && !color.equals(state.getValue(TUBE_COLOR))) {
-                    level.setBlock(pos, state.setValue(TUBE_COLOR, color), Block.UPDATE_ALL);
+                    level.setBlockAndUpdate(pos, state.setValue(TUBE_COLOR, color));
                     if (!player.isCreative()) stack.shrink(1);
                     level.playSound(
                             null, pos, SoundEvents.GLOW_INK_SAC_USE, SoundSource.BLOCKS, 1f, 1f
@@ -172,11 +171,9 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
                 }
             }
 
-            if (player.isShiftKeyDown()) {
+            if (player.isShiftKeyDown() && !entity.inventoryIsEmpty()) {
                 entity.drop();
-                level.setBlock(pos, state.setValue(GROWTH_STAGE, 0), Block.UPDATE_ALL);
-                level.removeBlockEntity(pos);
-                level.sendBlockUpdated(pos, state, level.getBlockState(pos), Block.UPDATE_ALL);
+                level.setBlockAndUpdate(pos, state.setValue(GROWTH_STAGE, 0));
                 level.playSound(
                         null, pos, SoundEvents.WITHER_SHOOT, SoundSource.BLOCKS, 0.25f, 1.25f
                 );
@@ -264,7 +261,7 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
             );
             if (blocklet != null && this.blockletOwnerID != null) {
                 // Spawn blocklet
-                blocklet.setOwnerReference(EntityReference.of(blocklet));
+                blocklet.setOwnerReference(EntityReference.of(this.blockletOwnerID));
                 blocklet.setBlockStack(entity.getInventory().getResource(
                         BlockletMaterials.BODY.getInventoryIndex()
                 ).toStack().copy());
@@ -295,7 +292,7 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
 
             // Reset incubation chamber
             entity.clearInventory();
-            level.setBlock(pos, state.setValue(GROWTH_STAGE, 0).setValue(FILLED, false), Block.UPDATE_ALL);
+            level.setBlockAndUpdate(pos, state.setValue(GROWTH_STAGE, 0).setValue(FILLED, false));
         }
     }
 
@@ -306,7 +303,7 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
                 spawnBlocklet(level, pos, state);
             }
             else if (entity.getGrowthCounter() >= GROWTH_INTERVAL) {
-                level.setBlock(pos, state.setValue(GROWTH_STAGE, state.getValue(GROWTH_STAGE) + 1), Block.UPDATE_ALL);
+                level.setBlockAndUpdate(pos, state.setValue(GROWTH_STAGE, state.getValue(GROWTH_STAGE) + 1));
                 entity.resetGrowthCounter();
             }
             else if (entity.inventoryIsFull()) {

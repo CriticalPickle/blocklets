@@ -1,6 +1,5 @@
 package com.criticalpickle.blocklets.block.entity;
 
-import com.criticalpickle.blocklets.Blocklets;
 import com.criticalpickle.blocklets.registration.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
@@ -61,6 +60,16 @@ public class IncubationChamberBlockEntity extends BlockEntity {
         return inventory;
     }
 
+    public boolean inventoryIsEmpty() {
+        if (getInventory().size() <= 0) return true;
+        for (int i = 0; i < getInventory().size(); i++) {
+            if (!getInventory().getResource(i).isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public void clearInventory() {
         for (int i = 0; i < getInventory().size(); i++) {
             inventory.set(i, ItemResource.EMPTY, 0);
@@ -87,6 +96,7 @@ public class IncubationChamberBlockEntity extends BlockEntity {
 
         if(this.level != null) {
             Containers.dropContents(this.level, this.worldPosition, containerInv);
+            clearInventory();
         }
     }
 
