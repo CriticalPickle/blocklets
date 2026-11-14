@@ -65,7 +65,7 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
     public static final int MAX_GROWTH_STAGE = 10;
     public static final IntegerProperty GROWTH_STAGE = IntegerProperty.create("growth_stage", 0, MAX_GROWTH_STAGE);
     public static final EnumProperty<IncubationTubeColor> TUBE_COLOR = EnumProperty.create("tube_color", IncubationTubeColor.class);
-    public static final int GROWTH_INTERVAL = 20; // One stage every 45 seconds
+    public static final int GROWTH_INTERVAL = 900; // One stage every 45 seconds
     private UUID blockletOwnerID = null;
 
     private static final VoxelShape BASE = Block.box(0, 0, 0, 16, 3, 16); // Base

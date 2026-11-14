@@ -7,6 +7,7 @@ import com.criticalpickle.blocklets.util.BlockletGoalManager;
 import com.criticalpickle.blocklets.util.BlockletMaterials;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.UUIDUtil;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -34,6 +35,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -342,9 +344,9 @@ public class BlockletEntity extends PathfinderMob implements OwnableEntity {
     @Override
     protected void addAdditionalSaveData(@NonNull ValueOutput output) {
         super.addAdditionalSaveData(output);
-        final UUID owner = getOwnerUUID();
+        final EntityReference<LivingEntity> owner = getOwnerReference();
         if (owner != null) {
-            output.storeNullable("Owner", UUIDUtil.CODEC, owner);
+            EntityReference.store(owner, output, "Owner");
         }
         this.getInventory().serialize(output);
         // Action must be saved as it is purged from Blocklet on world close.
@@ -354,14 +356,25 @@ public class BlockletEntity extends PathfinderMob implements OwnableEntity {
     @Override
     protected void readAdditionalSaveData(@NonNull ValueInput input) {
         super.readAdditionalSaveData(input);
+
         if (input.child("Owner").isPresent()) {
-            final UUID uuid = input.read("Owner", UUIDUtil.CODEC).orElse(null);
-            if (uuid != null) {
-                setOwnerReference(EntityReference.of(uuid));
-            } else {
-                setOwnerReference(null);
-            }
+            final EntityReference<LivingEntity> ownerReference = EntityReference.read(input, "Owner");
+            this.setOwnerReference(ownerReference);
         }
+        else {
+            // Attempt legacy port.
+            input.read("Owner", UUIDUtil.CODEC).ifPresent(
+                    ownerUUID -> this.setOwnerReference(EntityReference.of(ownerUUID))
+            );
+        }
+
+        // Attempt legacy port.
+        input.list("HandItems", ItemStack.OPTIONAL_CODEC).ifPresent(items -> {
+            final List<ItemStack> itemList = items.stream().toList();
+            if (!itemList.isEmpty() && itemList.getFirst() != null)
+                this.setItemSlot(EquipmentSlot.MAINHAND, itemList.getFirst());
+        });
+
         this.getInventory().deserialize(input);
         if (input.child("inventory").isPresent()) {
             final NonNullList<ItemStack> stacks = NonNullList.withSize(4, ItemStack.EMPTY);
@@ -369,12 +382,24 @@ public class BlockletEntity extends PathfinderMob implements OwnableEntity {
             final ItemStacksResourceHandler temp = new ItemStacksResourceHandler(stacks);
             copyInventory(temp);
         }
-
         this.entityData.set(BLOCKLET_BLOCK, this.getInventory().getResource(0).toStack().copy());
+
         final String actionString = input.getString("blockletAction").orElse(null);
-        if (actionString == null) return;
-        final BlockletAction action = BlockletAction.find(actionString);
-        if (action == null) return;
-        action.setAction(this);
+        if (actionString != null) {
+            final BlockletAction action = BlockletAction.find(actionString);
+            if (action != null) action.setAction(this);
+        }
+
+        // Ensure attributes are accurate and ported.
+        input.list("attributes", CompoundTag.CODEC).ifPresent(attributes -> {
+            if (attributes.isEmpty()) return;
+
+            final List<CompoundTag> oldAttributeList = attributes.stream()
+                    .filter(tag -> tag.getStringOr("id", "").contains("generic."))
+                    .toList();
+            if (oldAttributeList.isEmpty()) return;
+
+            this.updateBlockletAttributes();
+        });
     }
 }
