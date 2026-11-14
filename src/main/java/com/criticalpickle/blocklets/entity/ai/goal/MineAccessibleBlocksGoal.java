@@ -196,10 +196,8 @@ public class MineAccessibleBlocksGoal extends Goal {
 
     @Override
     public void stop() {
-        final boolean released = MiningClaimManager.tryRelease(this.targetBlockPos, this.minerMob);
-//        if (!released) Blocklets.LOGGER.error("Unable to release claim for {} at {}!",
-//                this.minerMob.getClass().getSimpleName(), this.targetBlockPos);
-        // todo - look into the above (seems to work without?
+        // todo - Releases multiple times for unknown reason. Still works, but return state cannot be used reliably.
+        MiningClaimManager.tryRelease(this.targetBlockPos, this.minerMob);
 
         if (this.targetBlockPos != null) {
             this.minerMob.level().destroyBlockProgress(this.minerMob.getId(), this.targetBlockPos, -1);
