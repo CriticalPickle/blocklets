@@ -37,6 +37,14 @@ public class BlockletGoalManager {
     }
 
     /**
+     * Logs currently selected action under the context that it has changed.
+     */
+    public void logAction() {
+        Blocklets.LOGGER.info("Blocklet at {} has changed action to \"{}\"!",
+                this.blocklet.position(), getActionGoal());
+    }
+
+    /**
      * Swaps action with a goal by removing old
      * Blocklet action before adding this goal.
      * @param goal the goal to swap with the current action.
@@ -102,14 +110,6 @@ public class BlockletGoalManager {
                 .map(WrappedGoal::getGoal)
                 .filter(goal -> blockletActions.contains(goal.getClass().getSimpleName()))
                 .findAny().orElse(null);
-    }
-
-    /**
-     * Logs currently selected action under the context that it has changed.
-     */
-    public void logAction() {
-        Blocklets.LOGGER.info("Blocklet at {} has changed action to \"{}\"!",
-                this.blocklet.position(), getActionGoal());
     }
 
     /**

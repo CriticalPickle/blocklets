@@ -40,7 +40,7 @@ public class Blocklets {
     public static final Logger LOGGER = LogUtils.getLogger();
 
     public Blocklets(IEventBus modEventBus, ModContainer modContainer) {
-        // Register the commonSetup method for modloading
+        // Register the commonSetup method for mod loading
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::registerBlockColors);
         modEventBus.addListener(this::registerLayers);

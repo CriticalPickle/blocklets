@@ -17,8 +17,9 @@ import net.minecraft.world.level.LightLayer;
 import org.jspecify.annotations.NonNull;
 
 public class BlockletEntityRenderer extends MobRenderer<BlockletEntity, BlockletRenderState, BlockletModel> {
-    private static final Identifier TEXTURE =
-            Identifier.fromNamespaceAndPath(Blocklets.MODID, "textures/entity/blocklet/blocklet.png");
+    private static final Identifier TEXTURE = Identifier.fromNamespaceAndPath(
+            Blocklets.MODID, "textures/entity/blocklet/blocklet.png"
+    );
 
     public BlockletEntityRenderer(EntityRendererProvider.Context context) {
         super(context, new BlockletModel(context.bakeLayer(BlockletModel.LAYER_LOCATION)), 0.3F);

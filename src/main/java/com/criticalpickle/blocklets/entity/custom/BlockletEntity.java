@@ -28,6 +28,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.common.Tags;
 import net.neoforged.neoforge.transfer.item.ItemResource;
 import net.neoforged.neoforge.transfer.item.ItemStacksResourceHandler;
@@ -48,7 +49,7 @@ public class BlockletEntity extends PathfinderMob implements OwnableEntity {
     // Note that inventory stack handler size can be changed later but must
     // override deserializeNBT. Inventory is only currently for the server to
     // bookkeep blocklet items as client doesn't receive reliable updates.
-    private final ItemStacksResourceHandler inventory = new ItemStacksResourceHandler(2);
+    private final ItemStacksResourceHandler inventory = new ItemStacksResourceHandler(3);
     private final BlockletGoalManager goalManager;
     public static final double BASE_ARMOR = 0.0;
     public static final double BASE_ARMOR_TOUGHNESS = 0.0;
@@ -77,6 +78,11 @@ public class BlockletEntity extends PathfinderMob implements OwnableEntity {
         builder.define(START_ACTION, "");
         builder.define(MINING, false);
         builder.define(SWINGING, false);
+    }
+
+    @Override
+    public @NonNull Vec3 getLeashOffset() {
+        return new Vec3(0.0, this.getEyeHeight() * 0.6, 0);
     }
 
     @Override

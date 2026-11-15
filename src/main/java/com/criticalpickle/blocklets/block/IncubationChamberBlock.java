@@ -57,7 +57,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jspecify.annotations.NonNull;
 
 import java.util.Optional;
-import java.util.UUID;
 
 public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlockContainer, BucketPickup {
     public static final MapCodec<IncubationChamberBlock> CODEC = simpleCodec(IncubationChamberBlock::new);
@@ -65,8 +64,7 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
     public static final int MAX_GROWTH_STAGE = 10;
     public static final IntegerProperty GROWTH_STAGE = IntegerProperty.create("growth_stage", 0, MAX_GROWTH_STAGE);
     public static final EnumProperty<IncubationTubeColor> TUBE_COLOR = EnumProperty.create("tube_color", IncubationTubeColor.class);
-    public static final int GROWTH_INTERVAL = 900; // One stage every 45 seconds
-    private UUID blockletOwnerID = null;
+    public static final int GROWTH_INTERVAL = 40; // One stage every 45 seconds (900 ticks)
 
     private static final VoxelShape BASE = Block.box(0, 0, 0, 16, 3, 16); // Base
     private static final VoxelShape TUBE = Block.box(2, 3, 2, 14, 14, 14); // Pillar
@@ -213,7 +211,7 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
                     level.playSound(
                             null, pos, SoundEvents.BREWING_STAND_BREW, SoundSource.BLOCKS, 1f, 1f
                     );
-                    this.blockletOwnerID = player.getUUID();
+                    entity.setBlockletOwner(EntityReference.of(player));
                     return InteractionResult.SUCCESS;
                 }
             }
@@ -259,9 +257,10 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
             final BlockletEntity blocklet = ModEntityTypes.BLOCKLET_ENTITY.get().create(
                     level, EntitySpawnReason.TRIGGERED
             );
-            if (blocklet != null && this.blockletOwnerID != null) {
+            if (blocklet != null && entity.getBlockletOwner()!= null) {
                 // Spawn blocklet
-                blocklet.setOwnerReference(EntityReference.of(this.blockletOwnerID));
+                blocklet.setOwnerReference(entity.getBlockletOwner());
+                entity.setBlockletOwner(null);
                 blocklet.setBlockStack(entity.getInventory().getResource(
                         BlockletMaterials.BODY.getInventoryIndex()
                 ).toStack().copy());

@@ -11,6 +11,8 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.world.ContainerHelper;
 import net.minecraft.world.Containers;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.EntityReference;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -39,9 +41,18 @@ public class IncubationChamberBlockEntity extends BlockEntity {
         }
     };
     private int growthCounter = 0;
+    private EntityReference<LivingEntity> blockletOwner = null;
 
     public IncubationChamberBlockEntity(BlockPos pos, BlockState blockState) {
         super(ModBlockEntities.INCUBATION_CHAMBER_BE.get(), pos, blockState);
+    }
+
+    public void setBlockletOwner(EntityReference<LivingEntity> owner) {
+        this.blockletOwner = owner;
+    }
+
+    public EntityReference<LivingEntity> getBlockletOwner() {
+        return blockletOwner;
     }
 
     public void incrementGrowthCounter(int increment) {
@@ -123,6 +134,9 @@ public class IncubationChamberBlockEntity extends BlockEntity {
     protected void saveAdditional(@NonNull ValueOutput output) {
         super.saveAdditional(output);
         getInventory().serialize(output);
+        if (this.getBlockletOwner() != null) {
+            this.getBlockletOwner().store(output, "IncubationOwner");
+        }
     }
 
     @Override
@@ -136,6 +150,8 @@ public class IncubationChamberBlockEntity extends BlockEntity {
             final ItemStacksResourceHandler temp = new ItemStacksResourceHandler(stacks);
             copyInventory(temp);
         }
+
+        this.setBlockletOwner(EntityReference.read(input, "IncubationOwner"));
     }
 
     @Override
