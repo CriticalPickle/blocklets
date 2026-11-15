@@ -4,6 +4,7 @@ import com.criticalpickle.blocklets.registration.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -152,6 +153,12 @@ public class IncubationChamberBlockEntity extends BlockEntity {
         }
 
         this.setBlockletOwner(EntityReference.read(input, "IncubationOwner"));
+        if (this.getBlockletOwner() == null) {
+            // Attempt legacy port.
+            input.read("IncubationOwner", UUIDUtil.CODEC).ifPresent(
+                    uuid -> this.setBlockletOwner(EntityReference.of(uuid))
+            );
+        }
     }
 
     @Override
