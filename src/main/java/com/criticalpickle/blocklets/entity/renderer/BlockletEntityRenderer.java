@@ -11,8 +11,9 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
 public class BlockletEntityRenderer extends MobRenderer<BlockletEntity, BlockletModel<BlockletEntity>> {
-    private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(Blocklets.MODID, "textures/entity/blocklet/blocklet.png");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+            Blocklets.MODID, "textures/entity/blocklet/blocklet.png"
+    );
 
     public BlockletEntityRenderer(EntityRendererProvider.Context context) {
         super(context, new BlockletModel<>(context.bakeLayer(BlockletModel.LAYER_LOCATION)), 0.3F);

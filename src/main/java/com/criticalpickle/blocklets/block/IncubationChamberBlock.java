@@ -51,7 +51,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
-import java.util.UUID;
 
 public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlockContainer, BucketPickup {
     public static final MapCodec<IncubationChamberBlock> CODEC = simpleCodec(IncubationChamberBlock::new);
@@ -59,8 +58,7 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
     public static final int MAX_GROWTH_STAGE = 10;
     public static final IntegerProperty GROWTH_STAGE = IntegerProperty.create("growth_stage", 0, MAX_GROWTH_STAGE);
     public static final EnumProperty<IncubationTubeColor> TUBE_COLOR = EnumProperty.create("tube_color", IncubationTubeColor.class);
-    public static final int GROWTH_INTERVAL = 900; // One stage every 45 seconds
-    private UUID blockletOwnerID = null;
+    public static final int GROWTH_INTERVAL = 900; // One stage every 45 seconds (900 ticks)
 
     private static final VoxelShape BASE = Block.box(0, 0, 0, 16, 3, 16); // Base
     private static final VoxelShape TUBE = Block.box(2, 3, 2, 14, 14, 14); // Pillar
@@ -218,7 +216,7 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
                     level.playSound(
                             null, pos, SoundEvents.BREWING_STAND_BREW, SoundSource.BLOCKS, 1f, 1f
                     );
-                    this.blockletOwnerID = player.getUUID();
+                    entity.setBlockletOwnerUUID(player.getUUID());
                     return ItemInteractionResult.SUCCESS;
                 }
             }
@@ -262,9 +260,9 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
 
             // Get blocklet entity instance
             final BlockletEntity blocklet = ModEntityTypes.BLOCKLET_ENTITY.get().create(level);
-            if (blocklet != null && this.blockletOwnerID != null) {
+            if (blocklet != null && entity.getBlockletOwnerUUID() != null) {
                 // Spawn blocklet
-                blocklet.setOwnerUUID(this.blockletOwnerID);
+                blocklet.setOwnerUUID(entity.getBlockletOwnerUUID());
                 blocklet.setBlockStack(entity.getInventory().getStackInSlot(
                         BlockletMaterials.BODY.getInventoryIndex()).copy()
                 );
@@ -295,6 +293,7 @@ public class IncubationChamberBlock extends BaseEntityBlock implements LiquidBlo
 
             // Reset incubation chamber
             entity.clearInventory();
+            entity.setBlockletOwnerUUID(null);
             level.setBlockAndUpdate(pos, state.setValue(GROWTH_STAGE, 0).setValue(FILLED, false));
         }
     }

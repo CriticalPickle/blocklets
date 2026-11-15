@@ -16,6 +16,8 @@ import net.neoforged.neoforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.UUID;
+
 public class IncubationChamberBlockEntity extends BlockEntity {
     protected final ItemStackHandler inventory = new ItemStackHandler(4) {
         @Override
@@ -32,6 +34,15 @@ public class IncubationChamberBlockEntity extends BlockEntity {
         }
     };
     private int growthCounter = 0;
+    private UUID blockletOwnerUUID = null;
+
+    public void setBlockletOwnerUUID(UUID owner) {
+        this.blockletOwnerUUID = owner;
+    }
+
+    public UUID getBlockletOwnerUUID() {
+        return blockletOwnerUUID;
+    }
 
     public IncubationChamberBlockEntity(BlockPos pos, BlockState blockState) {
         super(ModBlockEntities.INCUBATION_CHAMBER_BE.get(), pos, blockState);
@@ -96,12 +107,18 @@ public class IncubationChamberBlockEntity extends BlockEntity {
     protected void saveAdditional(@NotNull CompoundTag tag, HolderLookup.@NotNull Provider registries) {
         super.saveAdditional(tag, registries);
         tag.put("inventory", getInventory().serializeNBT(registries));
+        if (this.getBlockletOwnerUUID() != null) {
+            tag.putUUID("IncubationOwner", this.getBlockletOwnerUUID());
+        }
     }
 
     @Override
     protected void loadAdditional(@NotNull CompoundTag tag, HolderLookup.@NotNull Provider registries) {
         super.loadAdditional(tag, registries);
         getInventory().deserializeNBT(registries, tag.getCompound("inventory"));
+        if (tag.contains("IncubationOwner")) {
+            this.setBlockletOwnerUUID(tag.getUUID("IncubationOwner"));
+        }
     }
 
     @Override

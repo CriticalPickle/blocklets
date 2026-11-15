@@ -15,6 +15,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.LightLayer;
+import org.jetbrains.annotations.NotNull;
 
 public class BlockletEntityToolLayer<T extends BlockletEntity, M extends BlockletModel<T>> extends RenderLayer<T, M> {
     public BlockletEntityToolLayer(RenderLayerParent<T, M> parentRenderer) {
@@ -23,7 +24,7 @@ public class BlockletEntityToolLayer<T extends BlockletEntity, M extends Blockle
 
     @Override
     public void render(
-            PoseStack poseStack, MultiBufferSource buffer, int packedLight,
+            @NotNull PoseStack poseStack, @NotNull MultiBufferSource buffer, int packedLight,
             T blocklet, float limbSwing, float limbSwingAmount, float partialTick,
             float ageInTicks, float netHeadYaw, float headPitch
     ) {
