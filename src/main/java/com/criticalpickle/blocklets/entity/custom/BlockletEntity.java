@@ -363,8 +363,8 @@ public class BlockletEntity extends PathfinderMob implements OwnableEntity {
     protected void readAdditionalSaveData(@NonNull ValueInput input) {
         super.readAdditionalSaveData(input);
 
-        if (input.child("Owner").isPresent()) {
-            final EntityReference<LivingEntity> ownerReference = EntityReference.read(input, "Owner");
+        final EntityReference<LivingEntity> ownerReference = EntityReference.read(input, "Owner");
+        if (ownerReference != null) {
             this.setOwnerReference(ownerReference);
         }
         else {
