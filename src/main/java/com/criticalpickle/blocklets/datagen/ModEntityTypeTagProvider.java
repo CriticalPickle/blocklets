@@ -39,7 +39,8 @@ public class ModEntityTypeTagProvider extends EntityTypeTagsProvider {
 
         tag(ModTags.Entities.BLOCKLET_HUSBANDRY).addTag(ModTags.Entities.BLOCKLET_MELEE_ENEMIES).add(
                 EntityType.CHICKEN, EntityType.COW, EntityType.IRON_GOLEM,
-                EntityType.MOOSHROOM, EntityType.RABBIT, EntityType.SHEEP
+                EntityType.MOOSHROOM, EntityType.RABBIT, EntityType.SHEEP,
+                EntityType.PIG
         );
     }
 }
