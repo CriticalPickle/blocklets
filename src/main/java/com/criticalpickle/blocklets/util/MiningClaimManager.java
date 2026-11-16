@@ -5,7 +5,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.Level;
-import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -75,7 +75,7 @@ public class MiningClaimManager {
      * Used to release a claim when a block is broken.
      * @param event the block break event to remove claim from.
      */
-    public static void releaseFrom(BlockEvent.BreakEvent event) {
+    public static void releaseFrom(BreakBlockEvent event) {
         if (event.getLevel() instanceof ServerLevel level) {
             final ResourceKey<Level> dimension = level.dimension();
             final Map<BlockPos, Claim> dimensionClaims = BLOCK_CLAIMS.computeIfAbsent(
